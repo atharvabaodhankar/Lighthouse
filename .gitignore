@@ -1,0 +1,36 @@
+# Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache & artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+terraform.tfvars
+
+# Secrets & Environment variables
+.env
+*.pem
+*.key
+id_ed25519
+id_ed25519.pub
+id_rsa
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.agents/
