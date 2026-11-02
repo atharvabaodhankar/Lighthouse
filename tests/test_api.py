@@ -1,6 +1,7 @@
 import unittest
-from starlette.testclient import TestClient
+from fastapi.testclient import TestClient
 from app.main import app
+from scripts.verify_dns import make_dns_query
 
 class TestLighthouseAPI(unittest.TestCase):
     def setUp(self):
@@ -120,6 +121,26 @@ class TestLighthouseAPI(unittest.TestCase):
         self.assertTrue(data.get("success"))
         self.assertIn("preview", data)
         self.assertIn("Lighthouse", data["preview"])
+
+    def test_toggle_protection_with_timer(self):
+        res = self.client.post("/api/toggle", json={"enable": False, "duration": 300})
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertTrue(data.get("success"))
+
+    def test_queries_search_filter(self):
+        res = self.client.get("/api/queries?limit=25&filter_type=all&search=google")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn("queries", data)
+
+    def test_dns_query_wire_format(self):
+        wire = make_dns_query("example.com")
+        self.assertGreater(len(wire), 12)
+        # Check header transaction ID (0x1234)
+        self.assertEqual(wire[0], 0x12)
+        self.assertEqual(wire[1], 0x34)
+
 
 if __name__ == "__main__":
     unittest.main()
