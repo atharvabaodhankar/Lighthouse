@@ -110,6 +110,8 @@ class TestLighthouseAPI(unittest.TestCase):
         data = res.json()
         self.assertIn("success", data)
         self.assertIn("message", data)
+        self.assertIn("flushed_at", data)
+        self.assertIsInstance(data["flushed_at"], float)
 
     def test_telegram_test_preview(self):
         res = self.client.post("/api/telegram/test", json={"preview_only": True})

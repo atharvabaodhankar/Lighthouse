@@ -14,6 +14,7 @@ let queryTypeChart = null;
 document.addEventListener('DOMContentLoaded', () => {
     applyTheme(currentTheme);
     initNavigation();
+    initModals();
     initCharts();
     loadAllData();
     startPolling();
@@ -30,10 +31,10 @@ function applyTheme(theme) {
     localStorage.setItem('lighthouse_theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
     
-    const icon = document.getElementById('themeToggleIcon');
-    if (icon) {
+    const toggleBtn = document.getElementById('themeToggleBtn');
+    if (toggleBtn) {
         // In dark mode (resend), show sun (click to toggle light); in light mode (notion), show moon
-        icon.setAttribute('data-lucide', theme === 'resend' ? 'sun' : 'moon');
+        toggleBtn.innerHTML = `<i id="themeToggleIcon" data-lucide="${theme === 'resend' ? 'sun' : 'moon'}" style="width:15px; height:15px;"></i>`;
     }
 
     if (trafficChart) {
@@ -112,6 +113,7 @@ function toggleMobileMenu() {
     } else {
         sidebar.classList.add('open');
         backdrop?.classList.add('open');
+        document.body.classList.add('drawer-open');
     }
 }
 
@@ -120,6 +122,7 @@ function closeMobileMenu() {
     const backdrop = document.getElementById('sidebarBackdrop');
     sidebar?.classList.remove('open');
     backdrop?.classList.remove('open');
+    document.body.classList.remove('drawer-open');
 }
 
 function switchTab(tabId) {
@@ -202,13 +205,20 @@ function fallbackCopy(text, btnElement) {
 
 function handleCopiedState(btnElement) {
     if (btnElement) {
+        if (!btnElement.dataset.originalHtml) {
+            btnElement.dataset.originalHtml = btnElement.innerHTML;
+        }
         btnElement.classList.add('copied');
-        const originalText = btnElement.innerHTML;
         btnElement.innerHTML = `<i data-lucide="check" style="width:12px; height:12px;"></i><span>Copied!</span>`;
         if (window.lucide) window.lucide.createIcons();
-        setTimeout(() => {
+        if (btnElement._copyTimeout) clearTimeout(btnElement._copyTimeout);
+        btnElement._copyTimeout = setTimeout(() => {
             btnElement.classList.remove('copied');
-            btnElement.innerHTML = originalText;
+            if (btnElement.dataset.originalHtml) {
+                btnElement.innerHTML = btnElement.dataset.originalHtml;
+                delete btnElement.dataset.originalHtml;
+            }
+            delete btnElement._copyTimeout;
             if (window.lucide) window.lucide.createIcons();
         }, 2000);
     }
@@ -231,7 +241,7 @@ async function confirmFlushLogs() {
     const btn = document.getElementById('confirmFlushBtn');
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = `<i data-lucide="loader-2" style="width:14px; height:14px; animation:spin 1s linear infinite;"></i><span>Flushing...</span>`;
+        btn.innerHTML = `<i data-lucide="loader-2" style="width:14px; height:14px; animation:spin 1s linear infinite;"></i><span>Clearing...</span>`;
     }
 
     try {
@@ -239,17 +249,20 @@ async function confirmFlushLogs() {
         const data = await res.json();
         
         closeFlushModal();
-        showToast('DNS query logs flushed successfully');
-        
-        // Reload all data to reflect flushed logs
-        await loadAllData();
+        if (data.success) {
+            showToast('DNS query logs cleared successfully');
+            // Reload all data to reflect flushed logs
+            await loadAllData();
+        } else {
+            showToast(data.message || 'Failed to clear query logs');
+        }
     } catch (e) {
-        console.error('Failed to flush logs', e);
-        showToast('Failed to flush logs');
+        console.error('Failed to clear logs', e);
+        showToast('Failed to clear query logs');
     } finally {
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = `<i data-lucide="trash-2" style="width:14px; height:14px;"></i><span>Flush all logs</span>`;
+            btn.innerHTML = `<i data-lucide="trash-2" style="width:14px; height:14px;"></i><span>Clear all logs</span>`;
             if (window.lucide) window.lucide.createIcons();
         }
     }
@@ -796,12 +809,43 @@ async function handleSendTelegramTest() {
 // -----------------------------------------------------------------------------
 
 function openModal(id) {
-    document.getElementById(id)?.classList.add('open');
-    if (window.lucide) window.lucide.createIcons();
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.classList.add('open');
+        document.body.classList.add('modal-open');
+        if (window.lucide) window.lucide.createIcons();
+    }
 }
 
 function closeModal(id) {
-    document.getElementById(id)?.classList.remove('open');
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.classList.remove('open');
+        if (!document.querySelector('.modal-overlay.open')) {
+            document.body.classList.remove('modal-open');
+        }
+    }
+}
+
+function initModals() {
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                closeModal(overlay.id);
+            }
+        });
+    });
+}
+
+function clearSearch() {
+    const searchInput = document.getElementById('querySearchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (searchInput) {
+        searchInput.value = '';
+        if (clearBtn) clearBtn.style.display = 'none';
+        loadQueries();
+        searchInput.focus();
+    }
 }
 
 function showToast(message) {
@@ -824,9 +868,13 @@ function showToast(message) {
 
 function initSearchAndFilters() {
     const searchInput = document.getElementById('querySearchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
     if (searchInput) {
         let debounceTimer;
         searchInput.addEventListener('input', () => {
+            if (clearBtn) {
+                clearBtn.style.display = searchInput.value.length > 0 ? 'inline-flex' : 'none';
+            }
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
                 loadQueries();

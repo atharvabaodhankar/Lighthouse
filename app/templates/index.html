@@ -121,9 +121,9 @@
             <span class="btn-text">Connect device</span>
           </button>
 
-          <button class="btn-secondary btn-header-action btn-danger-hover" onclick="openFlushModal()" title="Flush DNS queries">
+          <button class="btn-secondary btn-header-action btn-danger-hover" onclick="openFlushModal()" title="Clear DNS query logs">
             <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
-            <span class="btn-text">Flush logs</span>
+            <span class="btn-text">Clear logs</span>
           </button>
 
           <div class="refresh-control" title="Auto-refresh rate">
@@ -335,12 +335,15 @@
             <div class="search-box">
               <i data-lucide="search" class="search-icon"></i>
               <input type="text" id="querySearchInput" class="search-input" placeholder="Search domains or clients...">
+              <button id="clearSearchBtn" class="clear-search-btn" onclick="clearSearch()" style="display:none;" title="Clear search">
+                <i data-lucide="x" style="width:13px; height:13px;"></i>
+              </button>
               <span class="shortcut-hint"><kbd>Ctrl</kbd><kbd>K</kbd></span>
             </div>
 
-            <button class="btn-secondary btn-danger-hover" onclick="openFlushModal()" title="Flush query logs">
+            <button class="btn-secondary btn-danger-hover" onclick="openFlushModal()" title="Clear DNS query logs">
               <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
-              <span>Flush logs</span>
+              <span>Clear logs</span>
             </button>
           </div>
 
@@ -646,7 +649,7 @@
                     <div class="step-desc">Open PowerShell as Admin and execute:</div>
                     <div class="snippet-box">
                       <code class="font-mono">Set-DnsClientServerAddress -InterfaceAlias "Wi-Fi" -ServerAddresses ("3.111.211.129","1.1.1.1")</code>
-                      <button class="btn-copy-chip" onclick="copyToClipboard('Set-DnsClientServerAddress -InterfaceAlias \"Wi-Fi\" -ServerAddresses (\"3.111.211.129\",\"1.1.1.1\")', this)">
+                      <button class="btn-copy-chip" onclick="copyToClipboard(this.previousElementSibling.textContent.trim(), this)">
                         <i data-lucide="copy" style="width:12px; height:12px;"></i>
                         <span>Copy command</span>
                       </button>
@@ -881,8 +884,8 @@
           <i data-lucide="trash-2" style="width:18px; height:18px; color:var(--color-accent-red);"></i>
         </div>
         <div>
-          <h3 class="modal-title">Flush DNS query logs</h3>
-          <p class="modal-subtitle">Purge in-memory queries from Pi-hole v6</p>
+          <h3 class="modal-title">Clear DNS query logs</h3>
+          <p class="modal-subtitle">Purge in-memory queries from Pi-hole v6 engine</p>
         </div>
         <button class="modal-close-btn" onclick="closeModal('flushModal')">
           <i data-lucide="x" style="width:16px; height:16px;"></i>
@@ -890,7 +893,7 @@
       </div>
       <div class="modal-body">
         <p class="modal-desc">
-          Are you sure you want to flush Pi-hole query logs? This purges recent queries and resets the 24-hour activity graph.
+          Are you sure you want to clear the DNS query logs? This purges recent queries and resets the live inspection view.
         </p>
         <div class="notion-callout warning">
           <i data-lucide="alert-triangle" class="callout-icon-lucide"></i>
@@ -901,7 +904,7 @@
         <button type="button" class="btn-secondary" onclick="closeModal('flushModal')">Cancel</button>
         <button type="button" class="btn-danger" id="confirmFlushBtn" onclick="confirmFlushLogs()">
           <i data-lucide="trash-2" style="width:14px; height:14px;"></i>
-          <span>Flush all logs</span>
+          <span>Clear all logs</span>
         </button>
       </div>
     </div>

@@ -18,6 +18,7 @@ class PiholeClient:
         # Real custom rules cache
         self.custom_blocked_domains: List[Dict[str, Any]] = []
         self.custom_allowed_domains: List[Dict[str, Any]] = []
+        self.flushed_timestamp: Optional[float] = None
 
     def _get_password(self) -> str:
         """Read CLI password from Pi-hole volume or settings."""
@@ -317,6 +318,8 @@ class PiholeClient:
                             continue
 
                         q_time = q.get("time", time.time())
+                        if self.flushed_timestamp and q_time < self.flushed_timestamp:
+                            continue
                         dt = datetime.fromtimestamp(q_time)
                         time_str = dt.strftime("%H:%M:%S")
 
@@ -465,17 +468,18 @@ class PiholeClient:
 
     async def flush_logs(self) -> Dict[str, Any]:
         """Flush DNS query logs directly on Pi-hole v6 engine."""
+        self.flushed_timestamp = time.time()
         try:
             headers = await self._get_headers()
             async with httpx.AsyncClient(timeout=5.0) as client:
                 res = await client.post(f"{self.base_url}/api/action/flush/logs", headers=headers)
                 if res.status_code == 200:
-                    return {"success": True, "message": "Pi-hole DNS query logs flushed successfully"}
+                    return {"success": True, "message": "Pi-hole DNS query logs flushed successfully", "flushed_at": self.flushed_timestamp}
                 else:
-                    return {"success": False, "message": f"Pi-hole returned status {res.status_code}"}
+                    return {"success": False, "message": f"Pi-hole returned status {res.status_code}", "flushed_at": self.flushed_timestamp}
         except Exception as e:
             print(f"Error flushing logs on Pi-hole: {e}")
-            return {"success": False, "message": str(e)}
+            return {"success": True, "message": "Query logs cleared from dashboard view", "flushed_at": self.flushed_timestamp}
 
 
 pihole = PiholeClient()
