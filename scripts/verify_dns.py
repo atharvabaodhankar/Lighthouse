@@ -71,6 +71,17 @@ def test_udp_dns(ip: str, domain: str = "google.com", timeout: float = 3.0) -> T
         sock.close()
 
 
+def _recv_exact(sock: socket.socket, num_bytes: int) -> bytes:
+    """Read exactly num_bytes from a stream socket, handling TCP fragmentation."""
+    buf = bytearray()
+    while len(buf) < num_bytes:
+        chunk = sock.recv(num_bytes - len(buf))
+        if not chunk:
+            break
+        buf.extend(chunk)
+    return bytes(buf)
+
+
 def test_dot_dns(ip: str, host: str, domain: str = "google.com", timeout: float = 4.0) -> Tuple[bool, str]:
     """Test RFC 7858 DNS-over-TLS on TCP port 853 with TLS verification."""
     query = make_dns_query(domain)
@@ -87,11 +98,11 @@ def test_dot_dns(ip: str, host: str, domain: str = "google.com", timeout: float 
         tls_sock.connect((ip, 853))
         tls_sock.sendall(payload)
 
-        len_data = tls_sock.recv(2)
+        len_data = _recv_exact(tls_sock, 2)
         if len(len_data) < 2:
             return False, "Connection closed before length header received"
         resp_len = struct.unpack("!H", len_data)[0]
-        resp_data = tls_sock.recv(resp_len)
+        resp_data = _recv_exact(tls_sock, resp_len)
         elapsed = (time.perf_counter() - start) * 1000
 
         if len(resp_data) >= 12:
@@ -99,7 +110,7 @@ def test_dot_dns(ip: str, host: str, domain: str = "google.com", timeout: float 
             cipher = tls_sock.cipher()
             cipher_name = cipher[0] if cipher else "Unknown"
             return True, f"Resolved via {cipher_name} in {elapsed:.1f}ms (RCODE={rcode})"
-        return False, "Incomplete DNS response"
+        return False, f"Incomplete DNS response (received {len(resp_data)}/{resp_len} bytes)"
     except ssl.SSLCertVerificationError as e:
         return False, f"TLS Certificate Error: {e.verify_message}"
     except socket.timeout:
@@ -131,6 +142,7 @@ def main():
     parser.add_argument("--ip", default="3.111.211.129", help="Server IPv4 address")
     parser.add_argument("--dot-host", default="3-111-211-129.sslip.io", help="DNS-over-TLS FQDN")
     parser.add_argument("--api-url", default="http://3.111.211.129", help="Lighthouse Dashboard base URL")
+    parser.add_argument("--strict", action="store_true", help="Exit with non-zero code on any failure")
     args = parser.parse_args()
 
     print("=" * 65)
@@ -141,8 +153,8 @@ def main():
     print("=" * 65)
 
     print("\n1. Testing UDP Port 53 (Standard DNS)...")
-    ok, msg = test_udp_dns(args.ip, "google.com")
-    print(f"   [{'PASS' if ok else 'NOTE'}] {msg}")
+    ok_udp, msg_udp = test_udp_dns(args.ip, "google.com")
+    print(f"   [{'PASS' if ok_udp else 'NOTE'}] {msg_udp}")
 
     print("\n2. Testing TCP Port 853 (DNS-over-TLS Encrypted)...")
     ok_dot, msg_dot = test_dot_dns(args.ip, args.dot_host, "google.com")
@@ -157,11 +169,19 @@ def main():
     print(f"   [{'PASS' if ok_api else 'NOTE'}] {msg_api}")
 
     print("\n" + "=" * 65)
-    if ok_dot:
+    critical_pass = ok_dot and ok_sink
+    all_pass = ok_udp and ok_dot and ok_sink and ok_api
+
+    if critical_pass:
         print("[SUCCESS] Core DNS-over-TLS Shield is operational and serving queries.")
     else:
         print("[WARNING] Encrypted DoT check encountered an issue. See diagnostic message above.")
     print("=" * 65)
+
+    if args.strict:
+        sys.exit(0 if all_pass else 1)
+    else:
+        sys.exit(0 if critical_pass else 1)
 
 
 if __name__ == "__main__":

@@ -27,10 +27,11 @@ test:
 	$(PYTHON) -m unittest discover tests -v
 
 lint:
-	$(PYTHON) -m ruff check . || echo "Ruff not installed, running syntax check" && $(PYTHON) -m compileall app/ tests/
+	$(PYTHON) -m compileall app/ scripts/ tests/
+	@$(PYTHON) -c "import ruff" 2>/dev/null && $(PYTHON) -m ruff check . || echo "Ruff check skipped (ruff optional dependency not installed)"
 
 format:
-	$(PYTHON) -m black app/ tests/ || echo "Black not installed"
+	@$(PYTHON) -c "import black" 2>/dev/null && $(PYTHON) -m black app/ scripts/ tests/ || echo "Black format skipped (black optional dependency not installed)"
 
 docker-build:
 	docker build -t lighthouse-dashboard:latest .
@@ -42,6 +43,5 @@ docker-down:
 	docker compose -f docker-compose.dashboard.yml down
 
 clean:
-	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	find . -type f -name "*.pyc" -delete 2>/dev/null || true
-	rm -rf .pytest_cache build dist *.egg-info 2>/dev/null || true
+	$(PYTHON) -c "import pathlib, shutil; [shutil.rmtree(p, ignore_errors=True) for p in pathlib.Path('.').rglob('__pycache__')]; [p.unlink() for p in pathlib.Path('.').rglob('*.py[co]') if p.is_file()]; [shutil.rmtree(p, ignore_errors=True) for p in pathlib.Path('.').glob('*.egg-info')]; [shutil.rmtree(p, ignore_errors=True) for p in pathlib.Path('.').glob('build')]; [shutil.rmtree(p, ignore_errors=True) for p in pathlib.Path('.').glob('dist')]; [shutil.rmtree(p, ignore_errors=True) for p in pathlib.Path('.').glob('.pytest_cache')]"
+

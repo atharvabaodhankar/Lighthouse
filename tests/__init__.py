@@ -1,0 +1,1 @@
+"""Lighthouse automated test package."""

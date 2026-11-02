@@ -7,7 +7,7 @@ name = "lighthouse-dns"
 version = "1.1.0"
 description = "Production-grade Home Network DNS Shield and Traffic Intelligence Platform"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [
     { name = "Lighthouse Contributors" }
@@ -28,6 +28,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Internet :: Name Service (DNS)",
@@ -56,6 +57,10 @@ Homepage = "https://github.com/your-username/lighthouse"
 Documentation = "https://github.com/your-username/lighthouse/tree/main/docs"
 Repository = "https://github.com/your-username/lighthouse.git"
 Issues = "https://github.com/your-username/lighthouse/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"

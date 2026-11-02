@@ -82,7 +82,7 @@ ssh_command = "ssh -i ~/.ssh/id_ed25519 ubuntu@3.111.211.129"
 
 ---
 
-## 5. First-Boot Cloud-Init Lifecycle
+## 4. First-Boot Cloud-Init Lifecycle
 
 When the EC2 instance powers on, cloud-init automatically:
 1. Installs Docker CE, Containerd, and Docker Compose v2.
@@ -100,7 +100,7 @@ sudo tail -f /var/log/cloud-init-output.log
 
 ---
 
-## 6. Configuring Nginx DNS-over-TLS (Port 853)
+## 5. Configuring Nginx DNS-over-TLS (Port 853)
 
 To terminate encrypted DNS requests from mobile devices on port 853, configure Nginx stream proxy on the EC2 host:
 
@@ -154,7 +154,7 @@ sudo systemctl enable nginx
 
 ---
 
-## 7. Automated SSL Certificate Renewal
+## 6. Automated SSL Certificate Renewal
 
 Let's Encrypt certificates are valid for 90 days. Certbot installs a systemd timer by default. To ensure Nginx reloads automatically when certificates refresh, create a renewal deploy hook:
 
@@ -173,7 +173,7 @@ sudo certbot renew --dry-run
 
 ---
 
-## 8. Ongoing Maintenance & Operations
+## 7. Ongoing Maintenance & Operations
 
 ### Viewing Container Status
 ```bash

@@ -111,13 +111,17 @@ echo "Bootstrap complete. Lighthouse is running."
     print("Updated user_data.sh successfully.")
 
 
-def build_tfvars(home_ip="106.215.119.11", key_path="C:/Users/baodh/.ssh/id_ed25519.pub"):
+def build_tfvars(home_ip="106.215.119.11", key_path="C:/Users/baodh/.ssh/id_ed25519.pub", overwrite=False):
+    tfvars_file = BASE_DIR / 'terraform.tfvars'
+    if tfvars_file.exists() and not overwrite:
+        print("terraform.tfvars already exists, skipping overwrite.")
+        return
     content = f"""home_ip             = "{home_ip}"
 ssh_public_key_path = "{key_path}"
 aws_region          = "ap-south-1"
 instance_type       = "t3.micro"
 """
-    (BASE_DIR / 'terraform.tfvars').write_text(content, encoding='utf-8')
+    tfvars_file.write_text(content, encoding='utf-8')
     print(f"Created terraform.tfvars with home_ip={home_ip}")
 
 if __name__ == '__main__':
