@@ -61,37 +61,52 @@ only** — after that it bills at standard rates (roughly $8–9/month). Set a
 reminder, or switch `instance_type` and region to an Oracle Always-Free VM
 shape later if you want zero ongoing cost.
 
-## Lighthouse Dashboard (FastAPI + Notion Design System)
+## Lighthouse Dashboard (Production FastAPI + Notion/Linear Design System)
 
-The companion monitoring dashboard is built with FastAPI and an authentic **Notion Design System** interface matching [`DESIGN-notion.md`](file:///c:/Users/baodh/OneDrive/Desktop/Projects/Lighthouse/DESIGN-notion.md) (paper-soft `#f6f5f4` canvas, deep indigo `#213183` hero night band, NotionInter typography, and decorative sticker badges).
+The companion monitoring dashboard is built with FastAPI and an authentic **Notion & Linear Production Interface**:
+- **Canvas & Surface Palette**: Rich `#09090b` obsidian slate dark mode (no harsh pitch-black) with subtle translucent hairlines (`rgba(255,255,255,0.08)`), alongside a warm paper `#f7f6f3` Notion light mode.
+- **Header & Navigation**: Sticky glassmorphic header with live sync beacon, breadcrumbs, unified single-source sidebar navigation, and a responsive slide-out mobile drawer.
 
 ### Features
-- **📊 24-Hour Traffic Analytics**: Real-time interactive charts tracking total queries vs. blocked ads and trackers.
-- **📜 Live Query Log**: Searchable, filterable DNS query stream (`Ctrl+K` domain search, Blocked/Permitted filter, instant rule toggle).
-- **📱 Guarded Devices Inventory**: Breakdown of household clients (laptops, phones, Apple TV, Smart TVs, IoT sensors) with query volume and block ratios.
-- **🛡️ Custom Rules Management**: Visual blacklist and whitelist editor for exact and regex domain filters.
-- **🔔 Telegram Daily Briefings**: Automated daily threat summaries and network digests on your phone.
-- **🔄 Auto-Detect Mock / Live Mode**: If Pi-hole is not reachable locally, it automatically simulates authentic telemetry data for rapid development and testing.
+- **📊 24-Hour Traffic Analytics**: Real-time Chart.js interactive graphs tracking total resolved queries vs. sinkholed trackers.
+- **📜 Live Query Log & Flush Action**: Live streaming query log with instant search, status filtering, and a one-click **Flush Logs** feature backed by `/api/logs/flush` interfacing directly with the Pi-hole v6 action engine.
+- **📱 Multi-Platform Connect & Setup Guide**: Comprehensive, interactive instructions with one-click copy buttons for:
+  - **Android (Private DNS)**: `3-111-211-129.sslip.io` (DNS-over-TLS on port 853 with valid TLS certificates).
+  - **Apple iOS**: Wi-Fi DNS configuration and DoT profile support.
+  - **Home Wi-Fi Router**: Whole-household DHCP DNS routing via `3.111.211.129`.
+  - **Windows & macOS**: Native settings and one-line PowerShell / Terminal commands.
+- **📱 Guarded Devices Inventory**: Breakdown of household clients (laptops, mobile phones, Smart TVs, IoT sensors) with live query counts and block efficiency.
+- **🛡️ Custom Filtering Rules**: Blacklist and whitelist editor with exact domain and wildcard regex matching.
+- **🔔 Telegram Daily Briefings**: Automated daily privacy reports and test dispatch tools.
 
 ### Running Locally
 
 ```bash
 # 1. Create and activate a virtual environment
 python -m venv .venv
-source .venv/bin/activate  # Or on Windows: .\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate.ps1  # Or on Linux: source .venv/bin/activate
 
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Launch the dashboard
+# 3. Run automated test suite
+python -m unittest tests/test_api.py -v
+
+# 4. Launch the dashboard
 python run.py
 ```
 Open **`http://localhost:8000`** in your browser.
 
-### Deploying on the EC2 Box
+### Deploying to Production (AWS EC2)
 
-To run the dashboard alongside Pi-hole on your AWS EC2 instance:
+The live EC2 deployment runs Pi-hole v6, Nginx DNS-over-TLS (port 853), and Lighthouse Dashboard in Docker:
 ```bash
-docker compose -f docker-compose.dashboard.yml up -d --build
+# SSH into the server
+ssh -i ~/.ssh/id_ed25519 ubuntu@3.111.211.129
+
+# Rebuild and restart dashboard container
+cd /opt/homewatch
+docker compose up -d --build dashboard
 ```
+
 
